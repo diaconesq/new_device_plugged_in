@@ -1,14 +1,41 @@
-﻿using System.Management;
+﻿using System.Collections.Concurrent;
+using System.Management;
+using System.Runtime.Versioning;
+
+[assembly: SupportedOSPlatform("windows")]
+
+// Constants
+const int SeparatorWidth = 100;
+const int SleepIntervalMs = 1000;
+const string TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff";
+const string DeviceCreationQuery = "SELECT * FROM __InstanceCreationEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_PnPEntity'";
+const string DeviceDeletionQuery = "SELECT * FROM __InstanceDeletionEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_PnPEntity'";
+
+// Thread-safe collection for tracking devices
+var trackedDevices = new ConcurrentDictionary<string, bool>();
+
+// Set up cancellation for graceful shutdown
+using var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (sender, e) =>
+{
+    e.Cancel = true;
+    cts.Cancel();
+};
 
 try
 {
     // Get initial list of devices
     Console.Write("Scanning initial devices... ");
-    var devicesBefore = GetCurrentDevices();
-    Console.WriteLine($"found {devicesBefore.Count} devices.\n");
+    var initialDevices = GetCurrentDevices();
+    foreach (var deviceId in initialDevices)
+    {
+        trackedDevices.TryAdd(deviceId, true);
+    }
+    Console.WriteLine($"found {trackedDevices.Count} devices.\n");
 
-    // Set up WMI event watcher for device creation
-    var creationWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM __InstanceCreationEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_PnPEntity'"));
+    // Set up WMI event watchers with proper disposal
+    using var creationWatcher = new ManagementEventWatcher(new WqlEventQuery(DeviceCreationQuery));
+    using var deletionWatcher = new ManagementEventWatcher(new WqlEventQuery(DeviceDeletionQuery));
     
     creationWatcher.EventArrived += (sender, args) =>
     {
@@ -17,31 +44,17 @@ try
             var targetInstance = (ManagementBaseObject)args.NewEvent["TargetInstance"];
             string? deviceId = targetInstance["DeviceID"]?.ToString();
             
-            if (!string.IsNullOrEmpty(deviceId) && !devicesBefore.Contains(deviceId))
+            if (!string.IsNullOrEmpty(deviceId) && trackedDevices.TryAdd(deviceId, true))
             {
-                Console.WriteLine($"\n*** NEW DEVICE DETECTED at {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} ***");
-                Console.WriteLine(new string('=', 100));
-                
                 var deviceInfo = GetDeviceDetails(deviceId);
-                Console.WriteLine($"Name:         {deviceInfo.Name}");
-                Console.WriteLine($"Device ID:    {deviceInfo.DeviceId}");
-                Console.WriteLine($"Status:       {deviceInfo.Status}");
-                Console.WriteLine($"Manufacturer: {deviceInfo.Manufacturer}");
-                Console.WriteLine($"Description:  {deviceInfo.Description}");
-                Console.WriteLine(new string('=', 100));
-                
-                // Add to the list so we don't report it again
-                devicesBefore.Add(deviceId);
+                PrintDeviceEvent("NEW DEVICE DETECTED", deviceInfo);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing device creation event: {ex.Message}");
+            Console.WriteLine($"Error processing device creation: {ex.Message}");
         }
     };
-
-    // Set up WMI event watcher for device deletion
-    var deletionWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM __InstanceDeletionEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_PnPEntity'"));
     
     deletionWatcher.EventArrived += (sender, args) =>
     {
@@ -53,19 +66,19 @@ try
             
             if (!string.IsNullOrEmpty(deviceId))
             {
-                Console.WriteLine($"\n*** DEVICE REMOVED at {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} ***");
-                Console.WriteLine(new string('=', 100));
-                Console.WriteLine($"Name:         {deviceName}");
-                Console.WriteLine($"Device ID:    {deviceId}");
-                Console.WriteLine(new string('=', 100));
+                trackedDevices.TryRemove(deviceId, out _);
                 
-                // Remove from the list if it was there
-                devicesBefore.Remove(deviceId);
+                var deviceInfo = new DeviceInfo
+                {
+                    Name = deviceName,
+                    DeviceId = deviceId
+                };
+                PrintDeviceEvent("DEVICE REMOVED", deviceInfo, isRemoval: true);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing device deletion event: {ex.Message}");
+            Console.WriteLine($"Error processing device removal: {ex.Message}");
         }
     };
 
@@ -73,67 +86,95 @@ try
     creationWatcher.Start();
     deletionWatcher.Start();
 
-    Console.WriteLine("Please plug in or remove devices. (Press Ctrl+C to exit!!)\n");
+    Console.WriteLine("Monitoring device changes. (Press Ctrl+C to exit)\n");
 
-    // Keep the program running
-    while (true)
+    // Keep the program running until cancelled
+    while (!cts.Token.IsCancellationRequested)
     {
-        Thread.Sleep(1000);
+        Thread.Sleep(SleepIntervalMs);
     }
+}
+catch (OperationCanceledException)
+{
+    // Expected when user cancels
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Error: {ex.Message}");
-    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+    Console.WriteLine($"\nFatal error: {ex.Message}");
 }
 
-// Function to get list of current device IDs
+// Helper functions
+static void PrintDeviceEvent(string eventType, DeviceInfo deviceInfo, bool isRemoval = false)
+{
+    Console.WriteLine($"\n*** {eventType} at {DateTime.Now.ToString(TimestampFormat)} ***");
+    Console.WriteLine(new string('=', SeparatorWidth));
+    Console.WriteLine($"Name:         {deviceInfo.Name}");
+    Console.WriteLine($"Device ID:    {deviceInfo.DeviceId}");
+    
+    if (!isRemoval)
+    {
+        Console.WriteLine($"Status:       {deviceInfo.Status}");
+        Console.WriteLine($"Manufacturer: {deviceInfo.Manufacturer}");
+        Console.WriteLine($"Description:  {deviceInfo.Description}");
+    }
+    
+    Console.WriteLine(new string('=', SeparatorWidth));
+}
+
 static HashSet<string> GetCurrentDevices()
 {
     var devices = new HashSet<string>();
     
-    ManagementObjectSearcher searcher = new ManagementObjectSearcher(
-        "SELECT DeviceID FROM Win32_PnPEntity");
+    using var searcher = new ManagementObjectSearcher("SELECT DeviceID FROM Win32_PnPEntity");
+    using var results = searcher.Get();
     
-    foreach (ManagementObject device in searcher.Get())
+    foreach (ManagementObject device in results)
     {
-        string? deviceId = device["DeviceID"]?.ToString();
-        if (!string.IsNullOrEmpty(deviceId))
+        using (device)
         {
-            devices.Add(deviceId);
+            string? deviceId = device["DeviceID"]?.ToString();
+            if (!string.IsNullOrEmpty(deviceId))
+            {
+                devices.Add(deviceId);
+            }
         }
     }
     
     return devices;
 }
 
-// Function to get detailed information about a specific device
 static DeviceInfo GetDeviceDetails(string deviceId)
 {
-    ManagementObjectSearcher searcher = new ManagementObjectSearcher(
-        $"SELECT * FROM Win32_PnPEntity WHERE DeviceID = '{deviceId.Replace("\\", "\\\\")}'");
+    var escapedDeviceId = deviceId.Replace("\\", "\\\\");
     
-    foreach (ManagementObject device in searcher.Get())
+    using var searcher = new ManagementObjectSearcher(
+        $"SELECT * FROM Win32_PnPEntity WHERE DeviceID = '{escapedDeviceId}'");
+    using var results = searcher.Get();
+    
+    foreach (ManagementObject device in results)
     {
-        return new DeviceInfo
+        using (device)
         {
-            Name = device["Name"]?.ToString() ?? "Unknown",
-            DeviceId = deviceId,
-            Status = device["Status"]?.ToString() ?? "N/A",
-            Manufacturer = device["Manufacturer"]?.ToString() ?? "N/A",
-            Description = device["Description"]?.ToString() ?? "N/A"
-        };
+            return new DeviceInfo
+            {
+                Name = device["Name"]?.ToString() ?? "Unknown",
+                DeviceId = deviceId,
+                Status = device["Status"]?.ToString() ?? "N/A",
+                Manufacturer = device["Manufacturer"]?.ToString() ?? "N/A",
+                Description = device["Description"]?.ToString() ?? "N/A"
+            };
+        }
     }
     
     return new DeviceInfo { DeviceId = deviceId };
 }
 
-// Class to store device information
-class DeviceInfo
+// Record to store device information
+record DeviceInfo
 {
-    public string Name { get; set; } = "Unknown";
-    public string DeviceId { get; set; } = "";
-    public string Status { get; set; } = "N/A";
-    public string Manufacturer { get; set; } = "N/A";
-    public string Description { get; set; } = "N/A";
+    public string Name { get; init; } = "Unknown";
+    public string DeviceId { get; init; } = "";
+    public string Status { get; init; } = "N/A";
+    public string Manufacturer { get; init; } = "N/A";
+    public string Description { get; init; } = "N/A";
 }
