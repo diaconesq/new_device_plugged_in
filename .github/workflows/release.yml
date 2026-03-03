@@ -20,6 +20,16 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Publish UI (self-contained)
+        run: >
+          dotnet publish device_monitor_ui/device_monitor_ui.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish-ui-selfcontained
+
       - name: Publish UI (framework-dependent)
         run: >
           dotnet publish device_monitor_ui/device_monitor_ui.csproj
@@ -27,7 +37,17 @@ jobs:
           -r win-x64
           --self-contained false
           -p:PublishSingleFile=true
-          -o publish-ui
+          -o publish-ui-fdd
+
+      - name: Publish CLI (self-contained)
+        run: >
+          dotnet publish list_new_devices/list_new_devices.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish-cli-selfcontained
 
       - name: Publish CLI (framework-dependent)
         run: >
@@ -36,19 +56,23 @@ jobs:
           -r win-x64
           --self-contained false
           -p:PublishSingleFile=true
-          -o publish-cli
+          -o publish-cli-fdd
 
       - name: Create zip archives
         run: |
-          Compress-Archive -Path publish-ui/* -DestinationPath DeviceMonitor-UI-win-x64.zip
-          Compress-Archive -Path publish-cli/* -DestinationPath DeviceMonitor-CLI-win-x64.zip
+          Compress-Archive -Path publish-ui-selfcontained/* -DestinationPath DeviceMonitor-UI-win-x64-self-contained.zip
+          Compress-Archive -Path publish-ui-fdd/*            -DestinationPath DeviceMonitor-UI-win-x64.zip
+          Compress-Archive -Path publish-cli-selfcontained/* -DestinationPath DeviceMonitor-CLI-win-x64-self-contained.zip
+          Compress-Archive -Path publish-cli-fdd/*            -DestinationPath DeviceMonitor-CLI-win-x64.zip
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            DeviceMonitor-UI-win-x64-self-contained.zip
             DeviceMonitor-UI-win-x64.zip
+            DeviceMonitor-CLI-win-x64-self-contained.zip
             DeviceMonitor-CLI-win-x64.zip
           generate_release_notes: true
 
@@ -58,5 +82,7 @@ jobs:
         with:
           name: DeviceMonitor-win-x64
           path: |
-            publish-ui/
-            publish-cli/
+            publish-ui-selfcontained/
+            publish-ui-fdd/
+            publish-cli-selfcontained/
+            publish-cli-fdd/
