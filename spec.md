@@ -23,11 +23,11 @@ A Windows-native desktop application that monitors device plug-in and removal ev
 
 ## 3. Main Window Layout
 
-- **Top bar:** app title (left) + `Clear` button (right)
 - **Content area:** single live timeline of clustered device change events
+- **Bottom bar:** centered `Clear` button
 - **Empty state:** when no clusters exist, show a prominent centered message (see §7)
 
-No split pane, no inventory view, no secondary screens.
+No top bar (app title is in the window title bar). No split pane, no inventory view, no secondary screens.
 
 ---
 
@@ -107,8 +107,8 @@ Pick the **best-ranked name** across all events in the cluster using this priori
 If only Tier 4 names exist, fall back to `Multiple devices`.
 
 **Tier classification heuristic:**
-- Tier 1: name contains a word not in the Tier 2/3 keyword list (i.e. has brand/model specificity)
-- Tier 2: name starts with `HID-compliant` + specific type (mouse, keyboard, etc.), or is a known functional label
+- Tier 1: name contains at least one word NOT in the generic device vocabulary (i.e. has brand/model specificity — e.g. "Logitech", "Dell", "802.11n")
+- Tier 2: every word in the name belongs to the generic device vocabulary (bus/protocol words like USB/HID/Bluetooth, device-type words like Keyboard/Mouse/Controller, qualifiers like Input/Composite/System, etc.)
 - Tier 3: exact match against opaque blocklist (`USB Composite Device`, `USB Root Hub`, `USB Hub`, `Generic USB Hub`, `HID-compliant device`)
 - Tier 4: `Unknown` or null/empty
 
@@ -282,3 +282,4 @@ string BreakdownText     // "+X / -Y"
 | 2026-03-02 | Narrowed generic blocklist — HID-specific names (e.g. `HID-compliant mouse`) are meaningful enough to use; removed from blocklist (§6) |
 | 2026-03-02 | Replaced blocklist approach with 4-tier ranking system for cluster label selection; best name across cluster wins (§6) |
 | 2026-03-02 | Single-event clusters display flat (no expand); multi-event clusters show `+`/`-`/`~` icon based on addition/removal/mixed content (§6) |
+| 2026-03-03 | Broadened Tier 2 classification from narrow prefix checks to vocabulary-based heuristic — all-generic-word names are Tier 2; any non-generic word promotes to Tier 1 (§6a) |
