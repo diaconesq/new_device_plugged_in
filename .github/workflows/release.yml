@@ -20,7 +20,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Publish self-contained executable
+      - name: Publish UI (self-contained)
         run: >
           dotnet publish device_monitor_ui/device_monitor_ui.csproj
           -c Release
@@ -28,21 +28,37 @@ jobs:
           --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
-          -o publish
+          -o publish-ui
 
-      - name: Create zip archive
-        run: Compress-Archive -Path publish/* -DestinationPath DeviceMonitor-win-x64.zip
+      - name: Publish CLI (self-contained)
+        run: >
+          dotnet publish list_new_devices/list_new_devices.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish-cli
+
+      - name: Create zip archives
+        run: |
+          Compress-Archive -Path publish-ui/* -DestinationPath DeviceMonitor-UI-win-x64.zip
+          Compress-Archive -Path publish-cli/* -DestinationPath DeviceMonitor-CLI-win-x64.zip
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: DeviceMonitor-win-x64.zip
+          files: |
+            DeviceMonitor-UI-win-x64.zip
+            DeviceMonitor-CLI-win-x64.zip
           generate_release_notes: true
 
-      - name: Upload build artifact (manual runs)
+      - name: Upload build artifacts (manual runs)
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4
         with:
           name: DeviceMonitor-win-x64
-          path: publish/
+          path: |
+            publish-ui/
+            publish-cli/
