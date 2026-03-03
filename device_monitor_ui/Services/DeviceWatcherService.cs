@@ -111,7 +111,9 @@ public class DeviceWatcherService : IDisposable
 
     private static (string Name, string DeviceId, string Manufacturer, string Description) GetDeviceDetails(string deviceId)
     {
-        var escapedDeviceId = deviceId.Replace("\\", "\\\\", StringComparison.Ordinal);
+        var escapedDeviceId = deviceId
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("'", "\\'", StringComparison.Ordinal);
         using var searcher =
             new ManagementObjectSearcher($"SELECT * FROM Win32_PnPEntity WHERE DeviceID = '{escapedDeviceId}'");
         using var results = searcher.Get();

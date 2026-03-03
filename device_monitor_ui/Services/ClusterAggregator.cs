@@ -13,6 +13,9 @@ public class ClusterAggregator
 
     public void ProcessEvent(DeviceChangeEvent deviceEvent)
     {
+        DeviceChangeCluster? newCluster = null;
+        DeviceChangeCluster? appendedCluster = null;
+
         lock (_lock)
         {
             if (_currentCluster is null ||
@@ -25,14 +28,21 @@ public class ClusterAggregator
                 };
 
                 _currentCluster.Events.Add(deviceEvent);
-                NewClusterCreated?.Invoke(_currentCluster);
-                return;
+                newCluster = _currentCluster;
             }
-
-            _currentCluster.LastEventTime = deviceEvent.Timestamp;
-            _currentCluster.Events.Add(deviceEvent);
-            EventAppendedToCluster?.Invoke(_currentCluster, deviceEvent);
+            else
+            {
+                _currentCluster.LastEventTime = deviceEvent.Timestamp;
+                _currentCluster.Events.Add(deviceEvent);
+                appendedCluster = _currentCluster;
+            }
         }
+
+        // Fire events outside the lock to avoid deadlock with UI dispatcher
+        if (newCluster is not null)
+            NewClusterCreated?.Invoke(newCluster);
+        else if (appendedCluster is not null)
+            EventAppendedToCluster?.Invoke(appendedCluster, deviceEvent);
     }
 
     public void Reset()

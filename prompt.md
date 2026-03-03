@@ -14,7 +14,7 @@
 > 3. Implement **only** the changes that make a **relevant difference to code correctness and readability**. Skip nitpicks, stylistic preferences, and over-engineering suggestions that add complexity without clear benefit.
 > 4. Then commit.
 >
-> **Progress is tracked in `todo.md`.** Mark each step `[x]` after committing.
+> **Progress is tracked in `todo.md`.** Mark each step `[x]` before  committing.
 
 ---
 
