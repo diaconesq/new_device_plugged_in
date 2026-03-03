@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="device_monitor_ui/device_monitor_ui.csproj" />
   <Project Path="list_new_devices/list_new_devices.csproj" />
 </Solution>
