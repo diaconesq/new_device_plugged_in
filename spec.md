@@ -23,9 +23,10 @@ A Windows-native desktop application that monitors device plug-in and removal ev
 
 ## 3. Main Window Layout
 
-- **Content area:** single live timeline of clustered device change events
+- **Column header bar:** a fixed header row at the top of the timeline with labels (Time, Name, Device ID, Manufacturer, Description). Columns are **user-resizable** by dragging the splitter handles between headers.
+- **Content area:** single live timeline of clustered device change events, scrollable. Row columns are aligned to the header widths.
 - **Bottom bar:** centered `Clear` button
-- **Empty state:** when no clusters exist, show a prominent centered message (see §7)
+- **Empty state:** when no clusters exist, show a prominent centered message (see §7). The column header is hidden in the empty state.
 
 No top bar (app title is in the window title bar). No split pane, no inventory view, no secondary screens.
 
@@ -283,3 +284,4 @@ string BreakdownText     // "+X / -Y"
 | 2026-03-02 | Replaced blocklist approach with 4-tier ranking system for cluster label selection; best name across cluster wins (§6) |
 | 2026-03-02 | Single-event clusters display flat (no expand); multi-event clusters show `+`/`-`/`~` icon based on addition/removal/mixed content (§6) |
 | 2026-03-03 | Broadened Tier 2 classification from narrow prefix checks to vocabulary-based heuristic — all-generic-word names are Tier 2; any non-generic word promotes to Tier 1 (§6a) |
+| 2026-03-03 | Added resizable column headers with drag splitters to the timeline layout (§3) |

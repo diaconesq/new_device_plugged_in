@@ -23,67 +23,72 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <!-- Splitter style for column headers -->
+        <Style x:Key="HeaderSplitter" TargetType="GridSplitter">
+            <Setter Property="Width" Value="2" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="SizeWE" />
+        </Style>
+
         <DataTemplate x:Key="ChildEventTemplate" DataType="{x:Type vm:EventViewModel}">
             <Border Padding="32,4,8,4" BorderBrush="#333" BorderThickness="0,0,0,1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="30" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left"
                                Text="{Binding Icon}"
                                Style="{StaticResource IconText}"
-                               Foreground="{Binding Kind, Converter={StaticResource KindToBrush}}" />
-                    <TextBlock Grid.Column="1" Text="{Binding Timestamp}" Foreground="#CCC" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="3"
+                               Foreground="{Binding Kind, Converter={StaticResource KindToBrush}}"
+                               Width="30" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding Timestamp}" Foreground="#CCC" VerticalAlignment="Center" Margin="4,0"
+                               Width="{Binding ActualWidth, ElementName=ProxyTimestamp}" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"
+                               Width="{Binding ActualWidth, ElementName=ProxyName}" />
+                    <TextBlock DockPanel.Dock="Left"
                                Text="{Binding DeviceId}"
                                Foreground="#999"
                                VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" />
-                    <TextBlock Grid.Column="4" Text="{Binding Manufacturer}" Foreground="#AAA" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="5"
-                               Text="{Binding Description}"
+                               Margin="4,0"
+                               TextTrimming="CharacterEllipsis"
+                               Width="{Binding ActualWidth, ElementName=ProxyDeviceId}" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding Manufacturer}" Foreground="#AAA" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"
+                               Width="{Binding ActualWidth, ElementName=ProxyManufacturer}" />
+                    <TextBlock Text="{Binding Description}"
                                Foreground="#AAA"
                                VerticalAlignment="Center"
+                               Margin="4,0"
                                TextTrimming="CharacterEllipsis" />
-                </Grid>
+                </DockPanel>
             </Border>
         </DataTemplate>
 
         <DataTemplate x:Key="SingleEventTemplate" DataType="{x:Type vm:ClusterViewModel}">
             <Border Padding="8,6" BorderBrush="#333" BorderThickness="0,0,0,1" Background="#252525">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="30" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left"
                                Text="{Binding Icon}"
                                Style="{StaticResource IconText}"
-                               Foreground="{Binding IconColor, Converter={StaticResource IconColorConv}}" />
-                    <TextBlock Grid.Column="1" Text="{Binding Timestamp}" Foreground="#CCC" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Text="{Binding SingleName}" Foreground="White" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="3"
+                               Foreground="{Binding IconColor, Converter={StaticResource IconColorConv}}"
+                               Width="30" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding Timestamp}" Foreground="#CCC" VerticalAlignment="Center" Margin="4,0"
+                               Width="{Binding ActualWidth, ElementName=ProxyTimestamp}" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding SingleName}" Foreground="White" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"
+                               Width="{Binding ActualWidth, ElementName=ProxyName}" />
+                    <TextBlock DockPanel.Dock="Left"
                                Text="{Binding SingleDeviceId}"
                                Foreground="#999"
                                VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" />
-                    <TextBlock Grid.Column="4" Text="{Binding SingleManufacturer}" Foreground="#AAA" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="5"
-                               Text="{Binding SingleDescription}"
+                               Margin="4,0"
+                               TextTrimming="CharacterEllipsis"
+                               Width="{Binding ActualWidth, ElementName=ProxyDeviceId}" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding SingleManufacturer}" Foreground="#AAA" VerticalAlignment="Center" Margin="4,0" TextTrimming="CharacterEllipsis"
+                               Width="{Binding ActualWidth, ElementName=ProxyManufacturer}" />
+                    <TextBlock Text="{Binding SingleDescription}"
                                Foreground="#AAA"
                                VerticalAlignment="Center"
+                               Margin="4,0"
                                TextTrimming="CharacterEllipsis" />
-                </Grid>
+                </DockPanel>
             </Border>
         </DataTemplate>
 
@@ -91,23 +96,18 @@
             <Border BorderBrush="#333" BorderThickness="0,0,0,1" Background="#252525">
                 <Expander IsExpanded="False">
                     <Expander.Header>
-                        <Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
+                        <DockPanel Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}}">
+                            <TextBlock DockPanel.Dock="Left"
                                        Text="{Binding Icon}"
                                        Style="{StaticResource IconText}"
-                                       Foreground="{Binding IconColor, Converter={StaticResource IconColorConv}}" />
-                            <TextBlock Grid.Column="1" Text="{Binding Timestamp}" Foreground="#CCC" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{Binding TotalChanges}" Foreground="#AAA" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{Binding Breakdown}" Foreground="#AAA" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="4" Text="{Binding SummaryLabel}" Foreground="White" VerticalAlignment="Center" />
-                        </Grid>
+                                       Foreground="{Binding IconColor, Converter={StaticResource IconColorConv}}"
+                                       Width="30" />
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding Timestamp}" Foreground="#CCC" VerticalAlignment="Center" Margin="4,0"
+                                       Width="{Binding ActualWidth, ElementName=ProxyTimestamp}" />
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding TotalChanges}" Foreground="#AAA" VerticalAlignment="Center" Margin="4,0" Width="100" />
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding Breakdown}" Foreground="#AAA" VerticalAlignment="Center" Margin="4,0" Width="80" />
+                            <TextBlock Text="{Binding SummaryLabel}" Foreground="White" VerticalAlignment="Center" Margin="4,0" />
+                        </DockPanel>
                     </Expander.Header>
                     <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{StaticResource ChildEventTemplate}" />
                 </Expander>
@@ -137,28 +137,81 @@
                        HorizontalAlignment="Center" />
         </StackPanel>
 
-        <ScrollViewer Grid.Row="0"
-                      VerticalScrollBarVisibility="Auto"
-                      Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
-            <ItemsControl ItemsSource="{Binding Clusters}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type vm:ClusterViewModel}">
-                        <ContentControl Content="{Binding}">
-                            <ContentControl.Style>
-                                <Style TargetType="ContentControl">
-                                    <Setter Property="ContentTemplate" Value="{StaticResource MultiEventTemplate}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsSingleEvent}" Value="True">
-                                            <Setter Property="ContentTemplate" Value="{StaticResource SingleEventTemplate}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ContentControl.Style>
-                        </ContentControl>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+        <DockPanel Grid.Row="0"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVis}}">
+            <!-- Column header row with drag-resizable splitters.
+                 Proxy FrameworkElements sit inside each content column;
+                 row templates bind their column widths to these proxies. -->
+            <Grid DockPanel.Dock="Top" Background="#2D2D2D" Height="28">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="38" />
+                    <ColumnDefinition Width="100" MinWidth="70" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="200" MinWidth="60" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" MinWidth="60" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="160" MinWidth="60" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="200" MinWidth="60" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Icon (no header text) -->
+                <TextBlock Grid.Column="0" Text="" Foreground="#999" VerticalAlignment="Center" Margin="8,0,4,0" FontSize="12" />
+
+                <!-- Time -->
+                <Grid Grid.Column="1">
+                    <FrameworkElement x:Name="ProxyTimestamp" />
+                    <TextBlock Text="Time" Foreground="#999" VerticalAlignment="Center" Margin="4,0" FontSize="12" />
+                </Grid>
+                <GridSplitter Grid.Column="2" Style="{StaticResource HeaderSplitter}" />
+
+                <!-- Name -->
+                <Grid Grid.Column="3">
+                    <FrameworkElement x:Name="ProxyName" />
+                    <TextBlock Text="Name" Foreground="#999" VerticalAlignment="Center" Margin="4,0" FontSize="12" />
+                </Grid>
+                <GridSplitter Grid.Column="4" Style="{StaticResource HeaderSplitter}" />
+
+                <!-- Device ID -->
+                <Grid Grid.Column="5">
+                    <FrameworkElement x:Name="ProxyDeviceId" />
+                    <TextBlock Text="Device ID" Foreground="#999" VerticalAlignment="Center" Margin="4,0" FontSize="12" />
+                </Grid>
+                <GridSplitter Grid.Column="6" Style="{StaticResource HeaderSplitter}" />
+
+                <!-- Manufacturer -->
+                <Grid Grid.Column="7">
+                    <FrameworkElement x:Name="ProxyManufacturer" />
+                    <TextBlock Text="Manufacturer" Foreground="#999" VerticalAlignment="Center" Margin="4,0" FontSize="12" />
+                </Grid>
+                <GridSplitter Grid.Column="8" Style="{StaticResource HeaderSplitter}" />
+
+                <!-- Description -->
+                <TextBlock Grid.Column="9" Text="Description" Foreground="#999" VerticalAlignment="Center" Margin="4,0" FontSize="12" />
+            </Grid>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Clusters}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ClusterViewModel}">
+                            <ContentControl Content="{Binding}">
+                                <ContentControl.Style>
+                                    <Style TargetType="ContentControl">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource MultiEventTemplate}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSingleEvent}" Value="True">
+                                                <Setter Property="ContentTemplate" Value="{StaticResource SingleEventTemplate}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
 
         <!-- Bottom bar -->
         <Border Grid.Row="1" Background="#2D2D2D" Padding="16,8">
